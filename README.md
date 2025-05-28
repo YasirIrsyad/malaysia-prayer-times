@@ -16,7 +16,7 @@ A user-friendly front-end application to check daily prayer times in Malaysia ba
 * **Frontend Core:** HTML, JavaScript (ES6+)
 * **Styling:** **Tailwind CSS** (via CDN for rapid and responsive UI development)
 * **JavaScript Library:** **jQuery** (for DOM manipulation and simplified AJAX requests)
-* **Gemini 2.5 Pro (Preview Version)
+* **Gemini 2.5 Pro (Preview Version)**
 
 ## API Used
 
