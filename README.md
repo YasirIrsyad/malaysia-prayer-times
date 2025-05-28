@@ -24,13 +24,7 @@ This application build by the Gemini Pro 2.5 (Preview) version, I only do the pr
 
 ## How to Run Locally
 
-1.  **Clone the repository (or download the files):**
-    ```bash
-    git clone [https://github.com/YasirIrsyad/malaysia-prayer-times.git](https://github.com/YasirIrsyad/malaysia-prayer-times.git)
-    cd malaysia-prayer-time
-    ```
-
-2.  **Open `index.html` in your browser:**
+1.  **Open `index.html` in your browser:**
     Navigate to the project folder and open the `index.html` file in any modern web browser (e.g., Chrome, Firefox, Edge).
 
 No special build steps or local server (for this version) are required as it's a client-side application using CDN links for Tailwind CSS and jQuery.
