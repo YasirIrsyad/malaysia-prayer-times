@@ -26,7 +26,7 @@ This application build by the Gemini Pro 2.5 (Preview) version, I on ly do the p
 
 1.  **Clone the repository (or download the files):**
     ```bash
-    git clone [https://github.com/YYasirIrsyad/malaysia-prayer-times.git](https://github.com/YasirIrsyad/malaysia-prayer-times.git)
+    git clone [https://github.com/YasirIrsyad/malaysia-prayer-times.git](https://github.com/YasirIrsyad/malaysia-prayer-times.git)
     cd malaysia-prayer-time
     ```
 
