@@ -20,7 +20,7 @@ A user-friendly front-end application to check daily prayer times in Malaysia ba
 
 ## API Used
 
-This application build by the Gemini Pro 2.5 (Preview) version, I on ly do the prompting. This application also relies on the public API provided by **[api.waktusolat.app](https://api.waktusolat.app/)**. Please refer to their documentation for more information about the API itself and its usage terms.
+This application build by the Gemini Pro 2.5 (Preview) version, I only do the prompting. This application also relies on the public API provided by **[api.waktusolat.app](https://api.waktusolat.app/)**. Please refer to their documentation for more information about the API itself and its usage terms.
 
 ## How to Run Locally
 
