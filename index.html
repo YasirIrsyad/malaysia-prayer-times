@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waktu Solat Malaysia (Zon JAKIM)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto; /* Centered loader */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .site-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .site-content {
+            flex-grow: 1;
+        }
+        /* Custom styling for select to make it look better with Tailwind */
+        select#zoneSelect {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007AFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            background-size: 0.65rem auto;
+            padding-right: 2.5rem; /* Make space for arrow */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="site-container">
+        <header class="bg-green-700 text-white p-6 shadow-md">
+            <div class="container mx-auto max-w-4xl text-center">
+                <h1 class="text-3xl font-bold">Waktu Solat Malaysia</h1>
+            </div>
+        </header>
+
+        <main class="site-content container mx-auto max-w-4xl p-4 md:p-6">
+            <div class="bg-white p-4 rounded-lg shadow mb-6 text-center">
+                <p class="text-xl font-semibold" id="current-gregorian-date">Memuatkan Tarikh...</p>
+                <p class="text-md text-gray-600" id="current-hijri-date"></p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 class="text-2xl font-semibold mb-4 text-green-700">Pilih Zon</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div class="col-span-1 md:col-span-2">
+                        <label for="zoneSelect" class="block text-sm font-medium text-gray-700 mb-1">Pilih Kawasan (Kod JAKIM - Daerah)</label>
+                        <select id="zoneSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white">
+                            <option value="">Sila Pilih Zon...</option>
+                            </select>
+                    </div>
+                    <button id="getTimesByZoneBtn" class="col-span-1 md:col-span-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow transition duration-150 ease-in-out h-full">
+                        Dapatkan Waktu
+                    </button>
+                </div>
+                <p id="location-display" class="mt-3 text-center text-sm text-gray-600"></p>
+            </div>
+
+            <div id="loader" class="loader hidden"></div>
+
+            <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6 hidden" role="alert">
+                <strong class="font-bold">Ralat:</strong>
+                <span class="block sm:inline" id="error-text"></span>
+            </div>
+
+            <div id="prayerTimesContainer" class="bg-white p-6 rounded-lg shadow hidden">
+                <h2 class="text-2xl font-semibold mb-1 text-center text-green-700">Waktu Solat Hari Ini</h2>
+                <p class="text-center text-sm text-gray-600 mb-4" id="zone-display-info"></p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 text-center">
+                    </div>
+            </div>
+
+        </main>
+
+        <footer class="bg-gray-800 text-gray-300 p-6 mt-8 text-center">
+            <p>&copy; <span id="currentYear"></span> Laman Web Waktu Solat Anda. Hak Cipta Terpelihara.</p>
+            <p class="text-sm">Waktu solat disediakan oleh <a href="https://api.waktusolat.app" target="_blank" rel="noopener noreferrer" class="text-green-400 hover:text-green-300">api.waktusolat.app</a>.</p>
+        </footer>
+    </div>
+
+    <script>
+        // JAKIM Zone Data
+        const jakimZones = [
+          { "jakimCode": "JHR01", "negeri": "Johor", "daerah": "Pulau Aur dan Pulau Pemanggil" },
+          { "jakimCode": "JHR02", "negeri": "Johor", "daerah": "Johor Bahru, Kota Tinggi, Mersing, Kulai" },
+          { "jakimCode": "JHR03", "negeri": "Johor", "daerah": "Kluang, Pontian" },
+          { "jakimCode": "JHR04", "negeri": "Johor", "daerah": "Batu Pahat, Muar, Segamat, Gemas Johor, Tangkak" },
+          { "jakimCode": "KDH01", "negeri": "Kedah", "daerah": "Kota Setar, Kubang Pasu, Pokok Sena (Daerah Kecil)" },
+          { "jakimCode": "KDH02", "negeri": "Kedah", "daerah": "Kuala Muda, Yan, Pendang" },
+          { "jakimCode": "KDH03", "negeri": "Kedah", "daerah": "Padang Terap, Sik" },
+          { "jakimCode": "KDH04", "negeri": "Kedah", "daerah": "Baling" },
+          { "jakimCode": "KDH05", "negeri": "Kedah", "daerah": "Bandar Baharu, Kulim" },
+          { "jakimCode": "KDH06", "negeri": "Kedah", "daerah": "Langkawi" },
+          { "jakimCode": "KDH07", "negeri": "Kedah", "daerah": "Puncak Gunung Jerai" },
+          { "jakimCode": "KTN01", "negeri": "Kelantan", "daerah": "Bachok, Kota Bharu, Machang, Pasir Mas, Pasir Puteh, Tanah Merah, Tumpat, Kuala Krai, Mukim Chiku" },
+          { "jakimCode": "KTN02", "negeri": "Kelantan", "daerah": "Gua Musang (Daerah Galas Dan Bertam), Jeli, Jajahan Kecil Lojing" },
+          { "jakimCode": "MLK01", "negeri": "Melaka", "daerah": "SELURUH NEGERI MELAKA" },
+          { "jakimCode": "NGS01", "negeri": "Negeri Sembilan", "daerah": "Tampin, Jempol" },
+          { "jakimCode": "NGS02", "negeri": "Negeri Sembilan", "daerah": "Jelebu, Kuala Pilah, Rembau" },
+          { "jakimCode": "NGS03", "negeri": "Negeri Sembilan", "daerah": "Port Dickson, Seremban" },
+          { "jakimCode": "PHG01", "negeri": "Pahang", "daerah": "Pulau Tioman" },
+          { "jakimCode": "PHG02", "negeri": "Pahang", "daerah": "Kuantan, Pekan, Muadzam Shah" },
+          { "jakimCode": "PHG03", "negeri": "Pahang", "daerah": "Jerantut, Temerloh, Maran, Bera, Chenor, Jengka" },
+          { "jakimCode": "PHG04", "negeri": "Pahang", "daerah": "Bentong, Lipis, Raub" },
+          { "jakimCode": "PHG05", "negeri": "Pahang", "daerah": "Genting Sempah, Janda Baik, Bukit Tinggi" },
+          { "jakimCode": "PHG06", "negeri": "Pahang", "daerah": "Cameron Highlands, Genting Higlands, Bukit Fraser" },
+          { "jakimCode": "PHG07", "negeri": "Pahang", "daerah": "Zon Khas Daerah Rompin, (Mukim Rompin, Mukim Endau, Mukim Pontian)" },
+          { "jakimCode": "PRK01", "negeri": "Perak", "daerah": "Tapah, Slim River, Tanjung Malim" },
+          { "jakimCode": "PRK02", "negeri": "Perak", "daerah": "Kuala Kangsar, Sg. Siput , Ipoh, Batu Gajah, Kampar" },
+          { "jakimCode": "PRK03", "negeri": "Perak", "daerah": "Lenggong, Pengkalan Hulu, Grik" },
+          { "jakimCode": "PRK04", "negeri": "Perak", "daerah": "Temengor, Belum" },
+          { "jakimCode": "PRK05", "negeri": "Perak", "daerah": "Kg Gajah, Teluk Intan, Bagan Datuk, Seri Iskandar, Beruas, Parit, Lumut, Sitiawan, Pulau Pangkor" },
+          { "jakimCode": "PRK06", "negeri": "Perak", "daerah": "Selama, Taiping, Bagan Serai, Parit Buntar" },
+          { "jakimCode": "PRK07", "negeri": "Perak", "daerah": "Bukit Larut" },
+          { "jakimCode": "PLS01", "negeri": "Perlis", "daerah": "SELURUH NEGERI PERLIS" },
+          { "jakimCode": "PNG01", "negeri": "Pulau Pinang", "daerah": "SELURUH NEGERI PULAU PINANG" },
+          { "jakimCode": "SBH01", "negeri": "Sabah", "daerah": "Bahagian Sandakan (Timur), Bukit Garam, Semawang, Temanggong, Tambisan, Bandar Sandakan, Sukau" },
+          { "jakimCode": "SBH02", "negeri": "Sabah", "daerah": "Beluran, Telupid, Pinangah, Terusan, Kuamut, Bahagian Sandakan (Barat)" },
+          { "jakimCode": "SBH03", "negeri": "Sabah", "daerah": "Lahad Datu, Silabukan, Kunak, Sahabat, Semporna, Tungku, Bahagian Tawau (Timur)" },
+          { "jakimCode": "SBH04", "negeri": "Sabah", "daerah": "Bandar Tawau, Balong, Merotai, Kalabakan, Bahagian Tawau (Barat)" },
+          { "jakimCode": "SBH05", "negeri": "Sabah", "daerah": "Kudat, Kota Marudu, Pitas, Pulau Banggi, Bahagian Kudat" },
+          { "jakimCode": "SBH06", "negeri": "Sabah", "daerah": "Gunung Kinabalu" },
+          { "jakimCode": "SBH07", "negeri": "Sabah", "daerah": "Kota Kinabalu, Ranau, Kota Belud, Tuaran, Penampang, Papar, Putatan, Bahagian Pantai Barat" },
+          { "jakimCode": "SBH08", "negeri": "Sabah", "daerah": "Pensiangan, Keningau, Tambunan, Nabawan, Bahagian Pendalaman (Atas)" },
+          { "jakimCode": "SBH09", "negeri": "Sabah", "daerah": "Beaufort, Kuala Penyu, Sipitang, Tenom, Long Pasia, Membakut, Weston, Bahagian Pendalaman (Bawah)" },
+          { "jakimCode": "SWK01", "negeri": "Sarawak", "daerah": "Limbang, Lawas, Sundar, Trusan" },
+          { "jakimCode": "SWK02", "negeri": "Sarawak", "daerah": "Miri, Niah, Bekenu, Sibuti, Marudi" },
+          { "jakimCode": "SWK03", "negeri": "Sarawak", "daerah": "Pandan, Belaga, Suai, Tatau, Sebauh, Bintulu" },
+          { "jakimCode": "SWK04", "negeri": "Sarawak", "daerah": "Sibu, Mukah, Dalat, Song, Igan, Oya, Balingian, Kanowit, Kapit" },
+          { "jakimCode": "SWK05", "negeri": "Sarawak", "daerah": "Sarikei, Matu, Julau, Rajang, Daro, Bintangor, Belawai" },
+          { "jakimCode": "SWK06", "negeri": "Sarawak", "daerah": "Lubok Antu, Sri Aman, Roban, Debak, Kabong, Lingga, Engkelili, Betong, Spaoh, Pusa, Saratok" },
+          { "jakimCode": "SWK07", "negeri": "Sarawak", "daerah": "Serian, Simunjan, Samarahan, Sebuyau, Meludam" },
+          { "jakimCode": "SWK08", "negeri": "Sarawak", "daerah": "Kuching, Bau, Lundu, Sematan" },
+          { "jakimCode": "SWK09", "negeri": "Sarawak", "daerah": "Zon Khas (Kampung Patarikan)" },
+          { "jakimCode": "SGR01", "negeri": "Selangor", "daerah": "Gombak, Petaling, Sepang, Hulu Langat, Hulu Selangor, Shah Alam" },
+          { "jakimCode": "SGR02", "negeri": "Selangor", "daerah": "Kuala Selangor, Sabak Bernam" },
+          { "jakimCode": "SGR03", "negeri": "Selangor", "daerah": "Klang, Kuala Langat" },
+          { "jakimCode": "TRG01", "negeri": "Terengganu", "daerah": "Kuala Terengganu, Marang, Kuala Nerus" },
+          { "jakimCode": "TRG02", "negeri": "Terengganu", "daerah": "Besut, Setiu" },
+          { "jakimCode": "TRG03", "negeri": "Terengganu", "daerah": "Hulu Terengganu" },
+          { "jakimCode": "TRG04", "negeri": "Terengganu", "daerah": "Dungun, Kemaman" },
+          { "jakimCode": "WLY01", "negeri": "Wilayah Persekutuan", "daerah": "Kuala Lumpur, Putrajaya" },
+          { "jakimCode": "WLY02", "negeri": "Wilayah Persekutuan", "daerah": "Labuan" }
+        ];
+
+        $(document).ready(function() {
+            // --- DOM Elements ---
+            const $getTimesByZoneBtn = $('#getTimesByZoneBtn');
+            const $zoneSelect = $('#zoneSelect'); // Changed from $zoneInput
+            const $prayerTimesGrid = $('#prayerTimesContainer .grid');
+            const $mainPrayerContainer = $('#prayerTimesContainer');
+            const $errorMessageElement = $('#error-message');
+            const $errorTextElement = $('#error-text');
+            const $loaderElement = $('#loader');
+            const $locationDisplayElement = $('#location-display'); // To show status or selected zone info
+            const $currentGregorianDateEl = $('#current-gregorian-date');
+            const $currentHijriDateEl = $('#current-hijri-date');
+            const $zoneDisplayInfoEl = $('#zone-display-info'); // Specifically for displaying the active zone
+            $('#currentYear').text(new Date().getFullYear());
+
+            // Prayer names mapping from API key to display name
+            const prayerNameMapping = {
+                fajr: "Subuh",
+                syuruk: "Syuruk",
+                dhuhr: "Zohor",
+                asr: "Asar",
+                maghrib: "Maghrib",
+                isha: "Isyak"
+            };
+            const prayersToDisplay = ["fajr", "syuruk", "dhuhr", "asr", "maghrib", "isha"];
+
+            // --- Populate Zone Dropdown ---
+            function populateZoneDropdown() {
+                jakimZones.forEach(zone => {
+                    // Truncate long district names for better display in dropdown
+                    let daerahDisplay = zone.daerah;
+                    if (daerahDisplay.length > 70) { // Adjust character limit as needed
+                        daerahDisplay = daerahDisplay.substring(0, 67) + "...";
+                    }
+                    const optionText = `${zone.jakimCode} - ${daerahDisplay} (${zone.negeri})`;
+                    $zoneSelect.append(`<option value="${zone.jakimCode}">${optionText}</option>`);
+                });
+            }
+
+            // --- Display Current Dates (from API) ---
+            function displayCurrentDates(hijriDate, gregorianDate) {
+                const dateObj = new Date(gregorianDate);
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                $currentGregorianDateEl.text(dateObj.toLocaleDateString('ms-MY', options));
+                $currentHijriDateEl.text(`Hijrah: ${hijriDate}`);
+            }
+
+            // --- API Call Function using jQuery $.ajax ---
+            function fetchPrayerTimesByZone(zone) {
+                if (!zone) { // Prevent fetching if no zone is selected (e.g. "Sila Pilih Zon...")
+                    displayError("Sila pilih zon daripada senarai.");
+                    $locationDisplayElement.text("Tiada zon dipilih.");
+                    return;
+                }
+                clearError();
+                $mainPrayerContainer.addClass('hidden');
+                $loaderElement.removeClass('hidden');
+                $locationDisplayElement.text(`Mendapatkan waktu untuk zon ${zone}...`);
+                $zoneDisplayInfoEl.text('');
+
+                const apiUrl = `https://api.waktusolat.app/v2/solat/${zone.toUpperCase()}`;
+
+                $.ajax({
+                    url: apiUrl,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        let prayerTimesObjectForToday;
+                        let dailyInfoSource;
+                        let zoneName;
+                        let isTimestampFormat;
+
+                        if (data && data.data && data.data.prayers && Array.isArray(data.data.prayers) && data.data.prayers.length > 0 && data.data.zone) {
+                            dailyInfoSource = data.data.prayers[0];
+                            prayerTimesObjectForToday = dailyInfoSource.times;
+                            zoneName = data.data.zone;
+                            isTimestampFormat = false;
+                            if (!prayerTimesObjectForToday || typeof prayerTimesObjectForToday.fajr !== 'string') {
+                                displayError("Format waktu solat harian tidak dikenali (dijangka rentetan).");
+                                console.error("Unexpected format in dailyInfoSource.times:", prayerTimesObjectForToday);
+                                return;
+                            }
+                        } else if (data && data.prayers && Array.isArray(data.prayers) && data.prayers.length > 0 && data.zone) {
+                            const currentDayOfMonth = new Date().getDate();
+                            const foundDayData = data.prayers.find(p => p.day === currentDayOfMonth);
+                            if (foundDayData) {
+                                dailyInfoSource = foundDayData;
+                                prayerTimesObjectForToday = foundDayData;
+                                zoneName = data.zone;
+                                isTimestampFormat = true;
+                                if (typeof prayerTimesObjectForToday.fajr !== 'number') {
+                                    displayError("Format waktu solat bulanan tidak dikenali (dijangka cap waktu).");
+                                    console.error("Unexpected format in monthly-like data:", prayerTimesObjectForToday);
+                                    return;
+                                }
+                                if (!data.year || !data.month) {
+                                    displayError("Data bulanan tidak mempunyai maklumat tahun atau bulan di peringkat atasan.");
+                                    console.error("Missing year/month in monthly data:", data);
+                                    return;
+                                }
+                            } else {
+                                displayError(`Waktu solat untuk hari ini (Hari ${currentDayOfMonth}) tidak ditemui dalam data untuk zon ${data.zone}.`);
+                                $locationDisplayElement.text(`Data hari ini tidak ditemui untuk ${data.zone}.`);
+                                return;
+                            }
+                        } else {
+                            const errorMessage = (data && (data.message || data.error)) || "Struktur tindak balas API tidak dijangka atau data tidak lengkap.";
+                            displayError(errorMessage);
+                            console.error("Unexpected API response structure or incomplete data:", data);
+                            $locationDisplayElement.text("Gagal memuatkan data.");
+                            return;
+                        }
+
+                        displayPrayerTimes(prayerTimesObjectForToday, isTimestampFormat);
+                        let gregorianDateString;
+                        if (dailyInfoSource.date) {
+                            gregorianDateString = dailyInfoSource.date;
+                        } else if (data.year && data.month && dailyInfoSource.day) {
+                            const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+                            const monthNumber = monthNames.indexOf(data.month.toUpperCase()) + 1;
+                            if (monthNumber > 0) {
+                                gregorianDateString = `${data.year}-${String(monthNumber).padStart(2, '0')}-${String(dailyInfoSource.day).padStart(2, '0')}`;
+                            } else {
+                                 displayError("Nama bulan tidak sah dalam tindak balas API untuk membina tarikh Gregorian.");
+                                 console.error("Invalid month name for Gregorian date construction:", data.month);
+                                 return;
+                            }
+                        } else {
+                            displayError("Tidak dapat menentukan tarikh Gregorian daripada tindak balas API.");
+                            console.error("Missing data for Gregorian date construction:", dailyInfoSource, data);
+                            return;
+                        }
+
+                        displayCurrentDates(dailyInfoSource.hijri, gregorianDateString);
+                        $locationDisplayElement.text(''); // Clear fetching message
+                        $zoneDisplayInfoEl.text(`Zon: ${zoneName.toUpperCase()}`);
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error('Ralat mendapatkan waktu solat:', textStatus, errorThrown, jqXHR.responseText);
+                        let errorMsg = `Gagal mendapatkan waktu. Status: ${textStatus}.`;
+                        if (jqXHR.responseJSON && (jqXHR.responseJSON.message || jqXHR.responseJSON.error)) {
+                            errorMsg = jqXHR.responseJSON.message || jqXHR.responseJSON.error;
+                        } else if (jqXHR.responseText) {
+                             try {
+                                const parsedError = JSON.parse(jqXHR.responseText);
+                                errorMsg = parsedError.message || parsedError.error || `Ralat: ${jqXHR.status}. Sila semak kod zon.`;
+                            } catch (e) {
+                                errorMsg = `Ralat: ${jqXHR.status}. Tidak dapat menghurai tindak balas ralat. Pastikan kod zon '${zone}' sah.`;
+                            }
+                        }
+                        displayError(errorMsg);
+                        $locationDisplayElement.text(`Gagal mendapatkan waktu untuk zon ${zone}.`);
+                    },
+                    complete: function() {
+                        $loaderElement.addClass('hidden');
+                    }
+                });
+            }
+
+            // --- Event Listener for Zone Select Change and Button Click ---
+            $zoneSelect.on('change', function() {
+                const selectedZone = $(this).val();
+                if (selectedZone) { // Only fetch if a valid zone is selected
+                    fetchPrayerTimesByZone(selectedZone);
+                } else {
+                    clearError();
+                    $mainPrayerContainer.addClass('hidden');
+                    $locationDisplayElement.text("Sila pilih zon.");
+                }
+            });
+
+            $getTimesByZoneBtn.on('click', function() {
+                const selectedZone = $zoneSelect.val(); // Get value from dropdown
+                fetchPrayerTimesByZone(selectedZone); // Call fetch with the selected zone
+            });
+
+
+            // --- Display Prayer Times in Cards ---
+            function displayPrayerTimes(prayerTimeSource, isTimestampFormat) {
+                $prayerTimesGrid.empty(); 
+                prayersToDisplay.forEach(apiKey => {
+                    const prayerDisplayName = prayerNameMapping[apiKey];
+                    const timeValue = prayerTimeSource[apiKey];
+                    let displayTime = '--:--';
+                    if (timeValue !== undefined && timeValue !== null) {
+                        if (isTimestampFormat) {
+                            const dateObj = new Date(timeValue * 1000); 
+                            const hours = dateObj.getHours().toString().padStart(2, '0');
+                            const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                            displayTime = `${hours}:${minutes}`;
+                        } else {
+                            if (typeof timeValue === 'string' && timeValue.includes(':')) {
+                                displayTime = timeValue.substring(0, 5); 
+                            }
+                        }
+                    }
+                    const prayerCard = `
+                        <div class="bg-gray-50 p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-150">
+                            <p class="text-lg font-semibold text-green-600">${prayerDisplayName}</p>
+                            <p class="text-2xl">${displayTime}</p>
+                        </div>
+                    `;
+                    $prayerTimesGrid.append(prayerCard);
+                });
+                $mainPrayerContainer.removeClass('hidden');
+            }
+
+            // --- Error Handling ---
+            function displayError(message) {
+                $errorTextElement.text(message);
+                $errorMessageElement.removeClass('hidden');
+                $mainPrayerContainer.addClass('hidden');
+            }
+
+            function clearError() {
+                $errorMessageElement.addClass('hidden');
+                $errorTextElement.text('');
+            }
+
+            // --- Initial Load ---
+            function initialLoad() {
+                populateZoneDropdown(); // Populate the dropdown first
+
+                const today = new Date();
+                const gregorianDateReadable = today.toLocaleDateString('ms-MY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                $currentGregorianDateEl.text(gregorianDateReadable);
+                $currentHijriDateEl.text("Hijrah: Memuatkan...");
+                $locationDisplayElement.text("Sila pilih zon daripada senarai.");
+
+                const defaultZone = "SGR01"; 
+                $zoneSelect.val(defaultZone); // Set default selection in dropdown
+                if (defaultZone) { // Check if defaultZone is valid before fetching
+                    fetchPrayerTimesByZone(defaultZone);
+                }
+            }
+
+            initialLoad();
+        });
+    </script>
+</body>
+</html>
